@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  database:
+    image: cockroachdb/cockroach
+    ports:
+      - 26257:26257
+      - 8080:8080
+    command: ["start", "--insecure"]
+  webserver:
+    image: honeybadger
+    depends_on:
+      - database
+    build: .
+    ports:
+      - 2525:2525
+    environment:
+      - COCKROACHDB_URL=postgres://root@database:26257/honeybadger?sslmode=disable
