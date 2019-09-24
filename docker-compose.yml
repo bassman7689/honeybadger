@@ -6,6 +6,8 @@ services:
     ports:
       - 26257:26257
       - 8080:8080
+    networks:
+      - db
     command: ["start", "--insecure"]
   webserver:
     image: honeybadger
@@ -14,5 +16,56 @@ services:
     build: .
     ports:
       - 2525:2525
+    networks:
+      - db
+      - public
     environment:
       - COCKROACHDB_URL=postgres://root@database:26257/honeybadger?sslmode=disable
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - "./migrations:/migrations"
+    depends_on: 
+      - database
+    networks:
+      - db
+    command: ["migrate", "-path", "/migrations", "-database", "postgres://root@database:26257/honeybadger?sslmode=disable", "up"]
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - public
+      - db
+    volumes:
+      - grafana-volume:/var/lib/grafana
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    restart: always
+    environment:
+      - INFLUXDB_DB=telegraf
+      - INFLUXDB_ADMIN_ENABLED=true
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=supersecretpassword
+      - INFLUXDB_USER=telegraf
+      - INFLUXDB_USER_PASSWORD=secretpassword
+    ports:
+      - 8086:8086
+    networks:
+      - db
+    volumes:
+      - influxdb-volume:/var/lib/influxdb
+
+networks:
+  db:
+    internal: true
+  public:
+    external: true
+
+volumes:
+  grafana-volume:
+  influxdb-volume:
+  

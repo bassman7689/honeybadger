@@ -21,9 +21,9 @@ import (
 var db *sqlx.DB
 
 const (
-	InsertIP      = "INSERT INTO ips (ip) values ($1) ON CONFLICT DO NOTHING;"
-	InsertAddress = "INSERT INTO addresses (address) values ($1) ON CONFLICT DO NOTHING;"
-	InsertDomain  = "INSERT INTO domains (domain) values ($1) ON CONFLICT DO NOTHING;"
+	insertIP      = "INSERT INTO ips (ip) values ($1) ON CONFLICT DO NOTHING;"
+	insertAddress = "INSERT INTO addresses (address) values ($1) ON CONFLICT DO NOTHING;"
+	insertDomain  = "INSERT INTO domains (domain) values ($1) ON CONFLICT DO NOTHING;"
 )
 
 var funkyLogger = func() backends.Decorator {
@@ -47,18 +47,18 @@ var funkyLogger = func() backends.Decorator {
 		return backends.ProcessWith(
 			func(e *mail.Envelope, task backends.SelectTask) (backends.Result, error) {
 				if task == backends.TaskSaveMail {
-					_, err := db.Exec(InsertIP, e.RemoteIP)
+					_, err := db.Exec(insertIP, e.RemoteIP)
 					if err != nil {
 						backends.Log().Error(err)
 					}
 
-					_, err = db.Exec(InsertAddress, e.MailFrom.String())
+					_, err = db.Exec(insertAddress, e.MailFrom.String())
 					if err != nil {
 						backends.Log().Error(err)
 					}
 
 					domain := strings.Split(e.MailFrom.String(), "@")[1]
-					_, err = db.Exec(InsertDomain, domain)
+					_, err = db.Exec(insertDomain, domain)
 					if err != nil {
 						backends.Log().Error(err)
 					}
