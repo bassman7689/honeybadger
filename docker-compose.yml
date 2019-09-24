@@ -5,15 +5,14 @@ services:
     image: cockroachdb/cockroach
     ports:
       - 26257:26257
-      - 8080:8080
     networks:
       - db
     command: ["start", "--insecure"]
-  webserver:
+  smtpd:
     image: honeybadger
+    build: .
     depends_on:
       - database
-    build: .
     ports:
       - 2525:2525
     networks:
@@ -21,15 +20,31 @@ services:
       - public
     environment:
       - COCKROACHDB_URL=postgres://root@database:26257/honeybadger?sslmode=disable
+  webserver:
+    image: honeybadger
+    build: .
+    depends_on:
+      - database
+    ports:
+      - 8080:8080
+    networks:
+      - db
+      - public
+    environment:
+      - COCKROACHDB_URL=postgres://root@database:26257/honeybadger?sslmode=disable
+    command: ["/usr/local/bin/webserver"]
   migrate:
-    image: migrate/migrate
+    image: migrate
+    build:
+      dockerfile: ./scripts/Dockerfile.migrate
+      context: ./
     volumes:
       - "./migrations:/migrations"
-    depends_on: 
+    depends_on:
       - database
     networks:
       - db
-    command: ["migrate", "-path", "/migrations", "-database", "postgres://root@database:26257/honeybadger?sslmode=disable", "up"]
+    entrypoint: /bin/sh setup_database.sh
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -68,4 +83,4 @@ networks:
 volumes:
   grafana-volume:
   influxdb-volume:
-  
+
