@@ -1,0 +1,7 @@
+from migrate/migrate
+
+COPY scripts/.pgpass .
+COPY scripts/setup_database.sh .
+RUN apk update && apk add postgresql-client
+
+RUN chmod u+x ./setup_database.sh
